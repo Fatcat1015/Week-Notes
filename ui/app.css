@@ -1,0 +1,242 @@
+:root {
+  color-scheme: light;
+  --paper: #f4f0e6;
+  --ink: #2b2926;
+  --muted: #7c776c;
+  --faint: #a39e93;
+  --line: #e3dccb;
+  --press: #e7e0d0;
+  --skipped: #9a948a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.top {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  padding: 12px 10px 6px;
+}
+
+.week-label {
+  text-align: center;
+}
+
+#range {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.when {
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.nav,
+.tool {
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.nav {
+  width: 32px;
+  height: 32px;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.nav:disabled {
+  color: var(--faint);
+  cursor: default;
+}
+
+.toolbar {
+  display: flex;
+  gap: 2px;
+  padding: 0 12px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tool {
+  width: 32px;
+  height: 28px;
+}
+
+.nav:hover:not(:disabled),
+.tool:hover {
+  background: var(--press);
+}
+
+.tool[aria-pressed="true"] {
+  background: var(--press);
+}
+
+.nav:focus-visible,
+.tool:focus-visible,
+.editor:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.status {
+  margin: 8px 16px 0;
+  color: #8a3d32;
+  font-size: 13px;
+}
+
+main {
+  flex: 1;
+  overflow: auto;
+  padding: 6px 16px 28px;
+}
+
+.block {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.block h2 {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+}
+
+.day.is-today h2 {
+  color: var(--ink);
+}
+
+.day.is-today h2::after {
+  content: "Today";
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.editor {
+  min-height: 1.45em;
+  padding: 2px 0;
+  outline: none;
+  cursor: text;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--faint);
+  pointer-events: none;
+}
+
+.task + .task {
+  margin-top: 4px;
+}
+
+.task-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.task-line .editor {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+  padding-top: 1px;
+}
+
+.task-actions[hidden] {
+  display: none;
+}
+
+.task-action {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 1px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.task-action:hover,
+.task-action[aria-pressed="true"] {
+  background: var(--press);
+  color: var(--ink);
+}
+
+.task-action:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.task.is-done .editor {
+  text-decoration: line-through;
+}
+
+.task.is-skipped .editor {
+  color: var(--skipped);
+  text-decoration: none;
+}
+
+.why-input {
+  display: block;
+  width: 100%;
+  margin: 4px 0 2px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.why-input::placeholder {
+  color: var(--faint);
+}
+
+.editor b,
+.editor strong {
+  font-weight: 700;
+}
+
+.editor s,
+.editor strike,
+.editor del {
+  text-decoration: line-through;
+}
