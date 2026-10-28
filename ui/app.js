@@ -57,7 +57,16 @@ function weekId(monday) {
 }
 
 function blankTask() {
-  return { html: "", state: "open", why: "" };
+  return { html: "", state: "open", why: "", hours: "", minutes: "" };
+}
+
+function durationValue(value, max) {
+  if (value === "" || value === null || value === undefined) return "";
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) return "";
+  let whole = Math.floor(number);
+  if (typeof max === "number") whole = Math.min(whole, max);
+  return whole;
 }
 
 function textOf(html) {
@@ -105,7 +114,7 @@ function htmlToTasks(html, why) {
   function push(fragment) {
     const clean = sanitize(fragment);
     if (!textOf(clean).trim()) return;
-    tasks.push({ html: clean, state: "open", why: "" });
+    tasks.push({ html: clean, state: "open", why: "", hours: "", minutes: "" });
   }
 
   if (blocked) {
@@ -121,7 +130,7 @@ function htmlToTasks(html, why) {
 
   const reason = (why || "").trim();
   if (reason) {
-    if (!tasks.length) tasks.push({ html: "", state: "skipped", why: reason });
+    if (!tasks.length) tasks.push({ html: "", state: "skipped", why: reason, hours: "", minutes: "" });
     else {
       const last = tasks[tasks.length - 1];
       last.state = "skipped";
@@ -136,8 +145,10 @@ function normalizeTask(task) {
   const state = task.state === "done" || task.state === "skipped" ? task.state : "open";
   const html = typeof task.html === "string" ? sanitize(task.html) : "";
   const why = typeof task.why === "string" ? task.why : "";
+  const hours = durationValue(task.hours, 999);
+  const minutes = durationValue(task.minutes, 59);
   if (!textOf(html).trim() && !why.trim() && state === "open") return null;
-  return { html, state, why };
+  return { html, state, why, hours, minutes };
 }
 
 function asTasks(value, legacyWhy) {
@@ -191,6 +202,35 @@ function actionButton(action, label, pressed) {
   return button;
 }
 
+function createDurationInput(className, value, label, max) {
+  const input = document.createElement("input");
+  input.type = "number";
+  input.min = "0";
+  input.step = "1";
+  input.max = String(max);
+  input.className = className;
+  input.value = value === "" || value === undefined || value === null ? "" : String(value);
+  input.setAttribute("aria-label", label);
+  input.inputMode = "numeric";
+  return input;
+}
+
+function createTimeColumn(task) {
+  const column = document.createElement("div");
+  column.className = "task-time";
+  const hours = createDurationInput("task-hours", task.hours, "Hours", 999);
+  const hourLabel = document.createElement("span");
+  hourLabel.textContent = "h";
+  const slash = document.createElement("span");
+  slash.className = "task-time-slash";
+  slash.textContent = "/";
+  const minutes = createDurationInput("task-minutes", task.minutes, "Minutes", 59);
+  const minuteLabel = document.createElement("span");
+  minuteLabel.textContent = "m";
+  column.append(hours, hourLabel, slash, minutes, minuteLabel);
+  return column;
+}
+
 function createWhyInput(value) {
   const input = document.createElement("input");
   input.type = "text";
@@ -205,9 +245,12 @@ function syncTaskChrome(row) {
   if (!row) return;
   const editor = row.querySelector(".editor");
   const actions = row.querySelector(".task-actions");
-  if (!editor || !actions) return;
+  const time = row.querySelector(".task-time");
+  if (!editor || !actions || !time) return;
   const open = (row.dataset.state || "open") === "open";
-  actions.hidden = editor.textContent.trim() === "" && open;
+  const hidden = editor.textContent.trim() === "" && open;
+  actions.hidden = hidden;
+  time.hidden = hidden;
 }
 
 function createTaskRow(task, placeholder, label) {
@@ -231,13 +274,14 @@ function createTaskRow(task, placeholder, label) {
   editor.setAttribute("aria-label", label);
   writeEditor(editor, task.html);
 
+  const time = createTimeColumn(task);
   const actions = document.createElement("div");
   actions.className = "task-actions";
   actions.append(
     actionButton("done", "Done", state === "done"),
     actionButton("skip", "Skip", state === "skipped"),
   );
-  line.append(editor, actions);
+  line.append(editor, time, actions);
   row.append(line);
   if (state === "skipped") row.append(createWhyInput(task.why));
   syncTaskChrome(row);
@@ -297,6 +341,8 @@ function readTask(row) {
     html: readEditor(row.querySelector(".editor")),
     state,
     why,
+    hours: durationValue(row.querySelector(".task-hours") && row.querySelector(".task-hours").value, 999),
+    minutes: durationValue(row.querySelector(".task-minutes") && row.querySelector(".task-minutes").value, 59),
   };
 }
 
@@ -479,6 +525,21 @@ note.addEventListener("input", (event) => {
   const row = event.target.closest && event.target.closest(".task");
   if (!row) return;
   syncTaskChrome(row);
+  scheduleSave();
+});
+
+note.addEventListener("change", (event) => {
+  const input = event.target;
+  if (!input.classList) return;
+  if (input.classList.contains("task-hours")) {
+    const hours = durationValue(input.value, 999);
+    input.value = hours === "" ? "" : String(hours);
+  } else if (input.classList.contains("task-minutes")) {
+    const minutes = durationValue(input.value, 59);
+    input.value = minutes === "" ? "" : String(minutes);
+  } else {
+    return;
+  }
   scheduleSave();
 });
 

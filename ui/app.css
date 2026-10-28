@@ -170,15 +170,51 @@ main {
   min-width: 0;
 }
 
+.task-time,
 .task-actions {
   display: flex;
   flex-shrink: 0;
+  align-items: center;
   gap: 2px;
   padding-top: 1px;
 }
 
+.task-time[hidden],
 .task-actions[hidden] {
   display: none;
+}
+
+.task-time {
+  color: var(--muted);
+  font-size: 12px;
+  gap: 3px;
+}
+
+.task-time input {
+  width: 2.4rem;
+  padding: 1px 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  text-align: right;
+  appearance: textfield;
+}
+
+.task-time input::-webkit-outer-spin-button,
+.task-time input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.task-time-slash {
+  color: var(--faint);
+}
+
+.task-actions {
+  gap: 2px;
 }
 
 .task-action {
