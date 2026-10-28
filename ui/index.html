@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Week Note</title>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <header class="top">
+      <button type="button" class="nav" id="prev" aria-label="Previous week">‹</button>
+      <div class="week-label">
+        <div id="range"></div>
+        <div id="when" class="when"></div>
+      </div>
+      <button type="button" class="nav" id="next" aria-label="Next week">›</button>
+    </header>
+    <div class="toolbar" role="toolbar" aria-label="Format">
+      <button type="button" class="tool" data-cmd="bold" aria-label="Bold" aria-pressed="false"><b>B</b></button>
+      <button type="button" class="tool" data-cmd="italic" aria-label="Italic" aria-pressed="false"><i>I</i></button>
+      <button type="button" class="tool" data-cmd="underline" aria-label="Underline" aria-pressed="false"><u>U</u></button>
+      <button type="button" class="tool" data-cmd="strikeThrough" aria-label="Strikethrough" aria-pressed="false"><s>S</s></button>
+    </div>
+    <p id="status" class="status" hidden></p>
+    <main id="note"></main>
+    <script src="app.js"></script>
+  </body>
+</html>
