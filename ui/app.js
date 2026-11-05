@@ -57,7 +57,7 @@ function weekId(monday) {
 }
 
 function blankTask() {
-  return { html: "", state: "open", why: "", hours: "", minutes: "" };
+  return { html: "", state: "open", why: "", hours: "" };
 }
 
 function durationValue(value, max) {
@@ -114,7 +114,7 @@ function htmlToTasks(html, why) {
   function push(fragment) {
     const clean = sanitize(fragment);
     if (!textOf(clean).trim()) return;
-    tasks.push({ html: clean, state: "open", why: "", hours: "", minutes: "" });
+    tasks.push({ html: clean, state: "open", why: "", hours: "" });
   }
 
   if (blocked) {
@@ -130,7 +130,7 @@ function htmlToTasks(html, why) {
 
   const reason = (why || "").trim();
   if (reason) {
-    if (!tasks.length) tasks.push({ html: "", state: "skipped", why: reason, hours: "", minutes: "" });
+    if (!tasks.length) tasks.push({ html: "", state: "skipped", why: reason, hours: "" });
     else {
       const last = tasks[tasks.length - 1];
       last.state = "skipped";
@@ -146,9 +146,8 @@ function normalizeTask(task) {
   const html = typeof task.html === "string" ? sanitize(task.html) : "";
   const why = typeof task.why === "string" ? task.why : "";
   const hours = durationValue(task.hours, 999);
-  const minutes = durationValue(task.minutes, 59);
   if (!textOf(html).trim() && !why.trim() && state === "open") return null;
-  return { html, state, why, hours, minutes };
+  return { html, state, why, hours };
 }
 
 function asTasks(value, legacyWhy) {
@@ -191,14 +190,32 @@ function clearError() {
   statusEl.textContent = "";
 }
 
-function actionButton(action, label, pressed) {
+function actionIcon(action) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 12 12");
+  svg.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke", "currentColor");
+  path.setAttribute("stroke-width", "1.5");
+  path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke-linejoin", "round");
+  path.setAttribute("d", action === "done" ? "M2 6.2 L4.7 9 L10 3" : "M3 3 L9 9 M9 3 L3 9");
+  svg.append(path);
+  return svg;
+}
+
+function actionButton(action, state) {
+  const pressed = stateForAction(action) === state;
   const button = document.createElement("button");
   button.type = "button";
   button.className = "task-action";
   button.dataset.action = action;
-  button.textContent = label;
+  button.append(actionIcon(action));
+  button.hidden = state !== "open" && !pressed;
   button.setAttribute("aria-pressed", pressed ? "true" : "false");
   button.setAttribute("aria-label", action === "done" ? "Complete task" : "Skip task");
+  button.title = action === "done" ? "Done" : "Skip";
   return button;
 }
 
@@ -221,13 +238,7 @@ function createTimeColumn(task) {
   const hours = createDurationInput("task-hours", task.hours, "Hours", 999);
   const hourLabel = document.createElement("span");
   hourLabel.textContent = "h";
-  const slash = document.createElement("span");
-  slash.className = "task-time-slash";
-  slash.textContent = "/";
-  const minutes = createDurationInput("task-minutes", task.minutes, "Minutes", 59);
-  const minuteLabel = document.createElement("span");
-  minuteLabel.textContent = "m";
-  column.append(hours, hourLabel, slash, minutes, minuteLabel);
+  column.append(hours, hourLabel);
   return column;
 }
 
@@ -278,8 +289,8 @@ function createTaskRow(task, placeholder, label) {
   const actions = document.createElement("div");
   actions.className = "task-actions";
   actions.append(
-    actionButton("done", "Done", state === "done"),
-    actionButton("skip", "Skip", state === "skipped"),
+    actionButton("done", state),
+    actionButton("skip", state),
   );
   line.append(editor, time, actions);
   row.append(line);
@@ -342,7 +353,6 @@ function readTask(row) {
     state,
     why,
     hours: durationValue(row.querySelector(".task-hours") && row.querySelector(".task-hours").value, 999),
-    minutes: durationValue(row.querySelector(".task-minutes") && row.querySelector(".task-minutes").value, 59),
   };
 }
 
@@ -414,6 +424,7 @@ function applyTaskState(row, state) {
   row.querySelectorAll(".task-action").forEach((button) => {
     const pressed = stateForAction(button.dataset.action) === state;
     button.setAttribute("aria-pressed", pressed ? "true" : "false");
+    button.hidden = state !== "open" && !pressed;
   });
   const existing = row.querySelector(".why-input");
   if (state === "skipped") {
@@ -531,15 +542,9 @@ note.addEventListener("input", (event) => {
 note.addEventListener("change", (event) => {
   const input = event.target;
   if (!input.classList) return;
-  if (input.classList.contains("task-hours")) {
-    const hours = durationValue(input.value, 999);
-    input.value = hours === "" ? "" : String(hours);
-  } else if (input.classList.contains("task-minutes")) {
-    const minutes = durationValue(input.value, 59);
-    input.value = minutes === "" ? "" : String(minutes);
-  } else {
-    return;
-  }
+  if (!input.classList.contains("task-hours")) return;
+  const hours = durationValue(input.value, 999);
+  input.value = hours === "" ? "" : String(hours);
   scheduleSave();
 });
 
@@ -641,6 +646,13 @@ async function init() {
   }
   showWeek(new Date(), { focusToday: true });
 }
+
+let scrollTimer = 0;
+note.addEventListener("scroll", () => {
+  note.classList.add("is-scrolling");
+  clearTimeout(scrollTimer);
+  scrollTimer = setTimeout(() => note.classList.remove("is-scrolling"), 700);
+});
 
 window.addEventListener("pywebviewready", init);
 window.setTimeout(() => {

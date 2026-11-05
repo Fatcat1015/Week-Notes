@@ -1,3 +1,35 @@
+@font-face {
+  font-family: "Courier Prime";
+  src: url("fonts/CourierPrime-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  src: url("fonts/CourierPrime-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  src: url("fonts/CourierPrime-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  src: url("fonts/CourierPrime-BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light;
   --paper: #f4f0e6;
@@ -25,7 +57,7 @@ body {
   overflow: hidden;
   background: var(--paper);
   color: var(--ink);
-  font-family: "Segoe UI", sans-serif;
+  font-family: "Courier Prime", "Courier New", Courier, monospace;
   font-size: 15px;
   line-height: 1.45;
 }
@@ -43,7 +75,7 @@ body {
 
 #range {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .when {
@@ -111,7 +143,38 @@ body {
 main {
   flex: 1;
   overflow: auto;
-  padding: 6px 16px 28px;
+  padding: 6px 8px 28px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+main.is-scrolling {
+  scrollbar-color: var(--muted) var(--paper);
+}
+
+main::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  background: var(--paper);
+}
+
+main::-webkit-scrollbar-track,
+main::-webkit-scrollbar-corner {
+  background: var(--paper);
+}
+
+main::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+main.is-scrolling::-webkit-scrollbar-thumb {
+  background: var(--muted);
+}
+
+main::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .block {
@@ -122,7 +185,7 @@ main {
 .block h2 {
   margin: 0 0 4px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.01em;
   color: var(--muted);
 }
@@ -161,7 +224,7 @@ main {
 
 .task-line {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 4px;
 }
 
@@ -191,10 +254,11 @@ main {
 }
 
 .task-time input {
-  width: 2.4rem;
-  padding: 1px 4px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
+  width: 3ch;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  outline: none;
   background: transparent;
   color: var(--ink);
   font: inherit;
@@ -209,24 +273,32 @@ main {
   margin: 0;
 }
 
-.task-time-slash {
-  color: var(--faint);
-}
-
 .task-actions {
   gap: 2px;
 }
 
 .task-action {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: 0;
   background: transparent;
   color: var(--muted);
-  font: inherit;
-  font-size: 12px;
-  line-height: 1.4;
-  padding: 1px 6px;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.task-action svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+.task-action[hidden] {
+  display: none;
 }
 
 .task-action:hover,
