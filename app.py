@@ -3,6 +3,7 @@
 import json
 import os
 import sys
+import threading
 from pathlib import Path
 
 import webview
@@ -37,6 +38,7 @@ class Api:
     def __init__(self):
         self._path = note_path()
         self._broken = False
+        self._save_lock = threading.Lock()
 
     def load_note(self):
         if not self._path.exists():
@@ -46,24 +48,47 @@ class Api:
         except (OSError, json.JSONDecodeError):
             self._broken = True
             return {"weeks": {}, "unreadable": True}
-        if not isinstance(data, dict) or not isinstance(data.get("weeks"), dict):
+        if not isinstance(data, dict):
             self._broken = True
             return {"weeks": {}, "unreadable": True}
-        return {"weeks": data["weeks"]}
+        weeks = data.get("weeks", {})
+        if not isinstance(weeks, dict):
+            self._broken = True
+            return {"weeks": {}, "unreadable": True}
+        reminder = data.get("reminder", "")
+        if not isinstance(reminder, str):
+            reminder = ""
+        return {
+            "weeks": weeks,
+            "reminder": reminder,
+            "reminderOpen": data.get("reminderOpen") is True,
+        }
 
     def save_note(self, note):
         if self._broken:
             return {"ok": False, "error": "unreadable"}
         if not isinstance(note, dict) or not isinstance(note.get("weeks"), dict):
             return {"ok": False, "error": "invalid"}
+        reminder = note.get("reminder", "")
+        if not isinstance(reminder, str):
+            return {"ok": False, "error": "invalid"}
         try:
-            payload = json.dumps({"weeks": note["weeks"]}, ensure_ascii=False, indent=2)
+            payload = json.dumps(
+                {
+                    "weeks": note["weeks"],
+                    "reminder": reminder,
+                    "reminderOpen": note.get("reminderOpen") is True,
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
         except (TypeError, ValueError):
             return {"ok": False, "error": "invalid"}
         self._path.parent.mkdir(parents=True, exist_ok=True)
         temporary = self._path.with_suffix(".json.tmp")
-        temporary.write_text(payload, encoding="utf-8")
-        temporary.replace(self._path)
+        with self._save_lock:
+            temporary.write_text(payload, encoding="utf-8")
+            temporary.replace(self._path)
         return {"ok": True}
 
 

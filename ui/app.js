@@ -2,6 +2,10 @@ const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const ALLOWED = new Set(["B", "STRONG", "I", "EM", "U", "S", "STRIKE", "DEL", "BR", "P", "DIV"]);
 
 const note = document.getElementById("note");
+const confirmEl = document.getElementById("confirm");
+const confirmQuestion = document.getElementById("confirm-question");
+const confirmCancel = document.getElementById("confirm-cancel");
+const confirmOk = document.getElementById("confirm-ok");
 const rangeEl = document.getElementById("range");
 const whenEl = document.getElementById("when");
 const prevBtn = document.getElementById("prev");
@@ -9,12 +13,15 @@ const nextBtn = document.getElementById("next");
 const statusEl = document.getElementById("status");
 const tools = Array.from(document.querySelectorAll(".tool"));
 
-let store = { weeks: {} };
+let store = { weeks: {}, reminder: "", reminderOpen: false };
 let viewMonday = startOfWeek(new Date());
 let mounted = false;
 let starting = false;
 let saveTimer = 0;
 let unreadable = false;
+let undoStack = [];
+let deleteUndoArmed = false;
+let pendingDelete = null;
 
 function startOfWeek(date) {
   const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -48,8 +55,12 @@ function formatRange(monday) {
   return `${left} – ${right}${year}`;
 }
 
-function isCurrentWeek(monday) {
-  return iso(monday) === iso(startOfWeek(new Date()));
+function weekPlace(monday) {
+  const view = iso(monday);
+  const current = iso(startOfWeek(new Date()));
+  if (view === current) return "This week";
+  if (view < current) return "Past week";
+  return "Future week";
 }
 
 function weekId(monday) {
@@ -190,7 +201,7 @@ function clearError() {
   statusEl.textContent = "";
 }
 
-function actionIcon(action) {
+function strokeIcon(pathData) {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 12 12");
   svg.setAttribute("aria-hidden", "true");
@@ -200,9 +211,17 @@ function actionIcon(action) {
   path.setAttribute("stroke-width", "1.5");
   path.setAttribute("stroke-linecap", "round");
   path.setAttribute("stroke-linejoin", "round");
-  path.setAttribute("d", action === "done" ? "M2 6.2 L4.7 9 L10 3" : "M3 3 L9 9 M9 3 L3 9");
+  path.setAttribute("d", pathData);
   svg.append(path);
   return svg;
+}
+
+function actionIcon(action) {
+  return strokeIcon(action === "done" ? "M2 6.2 L4.7 9 L10 3" : "M3 3 L9 9 M9 3 L3 9");
+}
+
+function trashIcon() {
+  return strokeIcon("M2.5 3.5 H9.5 M4.6 3.5 V2.6 H7.4 V3.5 M3.3 3.5 L3.9 10.2 H8.1 L8.7 3.5");
 }
 
 function actionButton(action, state) {
@@ -262,6 +281,8 @@ function syncTaskChrome(row) {
   const hidden = editor.textContent.trim() === "" && open;
   actions.hidden = hidden;
   time.hidden = hidden;
+  const edge = row.querySelector(".task-edge");
+  if (edge) edge.hidden = hidden;
 }
 
 function createTaskRow(task, placeholder, label) {
@@ -292,7 +313,18 @@ function createTaskRow(task, placeholder, label) {
     actionButton("done", state),
     actionButton("skip", state),
   );
-  line.append(editor, time, actions);
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.className = "task-delete";
+  remove.setAttribute("aria-label", label === "Deadline" ? "Delete deadline" : "Delete task");
+  remove.append(trashIcon());
+  const edge = document.createElement("div");
+  edge.className = "task-edge";
+  edge.append(remove);
+  const tail = document.createElement("div");
+  tail.className = "task-tail";
+  tail.append(time, actions);
+  line.append(editor, tail, edge);
   row.append(line);
   if (state === "skipped") row.append(createWhyInput(task.why));
   syncTaskChrome(row);
@@ -305,18 +337,53 @@ function fillList(list, tasks, placeholder, label) {
   list.append(createTaskRow(blankTask(), placeholder, label));
 }
 
+function renderReminder() {
+  const section = document.createElement("section");
+  section.className = "block reminders";
+  const open = store.reminderOpen === true;
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "reminder-toggle";
+  toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  const mark = document.createElement("span");
+  mark.className = "reminder-mark";
+  mark.setAttribute("aria-hidden", "true");
+  mark.textContent = open ? "▾" : "▸";
+  toggle.append(mark, document.createTextNode("Reminders"));
+  const body = document.createElement("div");
+  body.className = "reminder-body";
+  body.contentEditable = "true";
+  body.spellcheck = true;
+  body.dataset.placeholder = "A note for every week";
+  body.setAttribute("role", "textbox");
+  body.setAttribute("aria-label", "Reminders");
+  writeEditor(body, store.reminder || "");
+  body.hidden = !open;
+  toggle.addEventListener("click", () => {
+    const next = toggle.getAttribute("aria-expanded") !== "true";
+    store.reminderOpen = next;
+    body.hidden = !next;
+    toggle.setAttribute("aria-expanded", next ? "true" : "false");
+    mark.textContent = next ? "▾" : "▸";
+    scheduleSave();
+    if (next) body.focus();
+  });
+  section.append(toggle, body);
+  return section;
+}
+
 function render() {
   const monday = viewMonday;
   const id = weekId(monday);
   const week = ensureWeek(id, monday);
   const today = iso(new Date());
-  const current = isCurrentWeek(monday);
 
   rangeEl.textContent = formatRange(monday);
-  whenEl.textContent = current ? "This week" : "Past week";
-  nextBtn.disabled = current;
+  whenEl.textContent = weekPlace(monday);
+  nextBtn.disabled = false;
 
   note.replaceChildren();
+  note.append(renderReminder());
 
   const deadlines = document.createElement("section");
   deadlines.className = "block deadlines";
@@ -364,6 +431,11 @@ function readList(list) {
   return Array.from(list.querySelectorAll(":scope > .task")).map(readTask).filter(taskHasContent);
 }
 
+function readReminder(body) {
+  if (!body || !body.textContent.trim()) return "";
+  return sanitize(body.innerHTML);
+}
+
 function capture() {
   if (!mounted || unreadable) return;
   const monday = viewMonday;
@@ -373,6 +445,10 @@ function capture() {
   note.querySelectorAll('[data-list="day"]').forEach((list) => {
     week.days[list.dataset.day] = { tasks: readList(list) };
   });
+  const reminder = note.querySelector(".reminder-body");
+  if (reminder) store.reminder = readReminder(reminder);
+  const toggle = note.querySelector(".reminder-toggle");
+  if (toggle) store.reminderOpen = toggle.getAttribute("aria-expanded") === "true";
 }
 
 function prune(source) {
@@ -386,7 +462,8 @@ function prune(source) {
     });
     if (deadlines.length || Object.keys(days).length) weeks[id] = { deadlines, days };
   });
-  return { weeks };
+  const reminder = typeof source.reminder === "string" ? source.reminder : "";
+  return { weeks, reminder, reminderOpen: source.reminderOpen === true };
 }
 
 function scheduleSave() {
@@ -449,9 +526,70 @@ function useTagFormatting() {
   }
 }
 
+function editingField(node) {
+  return node && node.closest && node.closest(".editor, .reminder-body");
+}
+
+function disarmDeleteUndo() {
+  deleteUndoArmed = false;
+  undoStack = [];
+}
+
+function closeDeleteConfirm() {
+  pendingDelete = null;
+  confirmEl.hidden = true;
+}
+
+function openDeleteConfirm(row) {
+  pendingDelete = row;
+  const list = listOf(row);
+  confirmQuestion.textContent = list && list.dataset.list === "deadlines"
+    ? "Delete this deadline?"
+    : "Delete this task?";
+  confirmEl.hidden = false;
+  confirmCancel.focus();
+}
+
+function deleteTask(row) {
+  const list = listOf(row);
+  if (!list || !row.isConnected) return;
+  const task = readTask(row);
+  if (!taskHasContent(task)) return;
+  const index = Array.from(list.querySelectorAll(":scope > .task")).indexOf(row);
+  undoStack.push({
+    weekId: weekId(viewMonday),
+    mondayTime: viewMonday.getTime(),
+    list: list.dataset.list,
+    dayId: list.dataset.day || "",
+    index,
+    task,
+  });
+  deleteUndoArmed = true;
+  row.remove();
+  ensureTrailingBlank(list);
+  note.focus({ preventScroll: true });
+  scheduleSave();
+}
+
+function undoDelete() {
+  const item = undoStack.pop();
+  if (!item) return;
+  if (iso(viewMonday) !== item.weekId) showWeek(new Date(item.mondayTime));
+  const list = item.list === "deadlines"
+    ? note.querySelector('[data-list="deadlines"]')
+    : note.querySelector(`[data-list="day"][data-day="${item.dayId}"]`);
+  if (!list) return;
+  const row = createTaskRow(item.task, placeholderOf(list), labelOf(list));
+  const rows = list.querySelectorAll(":scope > .task");
+  list.insertBefore(row, rows[item.index] || null);
+  ensureTrailingBlank(list);
+  note.focus({ preventScroll: true });
+  scheduleSave();
+}
+
 function applyFormat(command) {
   const active = document.activeElement;
-  if (!active || !active.closest || !active.closest(".editor")) return;
+  if (!editingField(active)) return;
   useTagFormatting();
   document.execCommand(command, false, null);
   updateToolbar();
@@ -505,14 +643,23 @@ function ensureTrailingBlank(list) {
 }
 
 prevBtn.addEventListener("click", () => {
+  closeDeleteConfirm();
   showWeek(addDays(viewMonday, -7), { save: true });
 });
 
 nextBtn.addEventListener("click", () => {
-  if (nextBtn.disabled) return;
-  const next = addDays(viewMonday, 7);
-  if (iso(next) > iso(startOfWeek(new Date()))) return;
-  showWeek(next, { save: true });
+  closeDeleteConfirm();
+  showWeek(addDays(viewMonday, 7), { save: true });
+});
+
+confirmCancel.addEventListener("click", () => {
+  closeDeleteConfirm();
+});
+
+confirmOk.addEventListener("click", () => {
+  const row = pendingDelete;
+  closeDeleteConfirm();
+  if (row) deleteTask(row);
 });
 
 tools.forEach((button) => {
@@ -521,6 +668,13 @@ tools.forEach((button) => {
 });
 
 note.addEventListener("click", (event) => {
+  const remove = event.target.closest && event.target.closest(".task-delete");
+  if (remove && note.contains(remove)) {
+    const row = remove.closest(".task");
+    if (!row || !taskHasContent(readTask(row))) return;
+    openDeleteConfirm(row);
+    return;
+  }
   const button = event.target.closest && event.target.closest(".task-action");
   if (!button || !note.contains(button)) return;
   const row = button.closest(".task");
@@ -533,6 +687,11 @@ note.addEventListener("click", (event) => {
 });
 
 note.addEventListener("input", (event) => {
+  if (editingField(event.target)) disarmDeleteUndo();
+  if (event.target.closest && event.target.closest(".reminder-body")) {
+    scheduleSave();
+    return;
+  }
   const row = event.target.closest && event.target.closest(".task");
   if (!row) return;
   syncTaskChrome(row);
@@ -549,16 +708,18 @@ note.addEventListener("change", (event) => {
 });
 
 note.addEventListener("focusout", (event) => {
-  const editor = event.target.closest && event.target.closest(".editor");
+  const editor = editingField(event.target);
   if (!editor || !note.contains(editor)) return;
   if (!editor.textContent.trim()) editor.innerHTML = "";
-  syncTaskChrome(editor.closest(".task"));
+  const row = editor.closest(".task");
+  if (row) syncTaskChrome(row);
   scheduleSave();
 });
 
 note.addEventListener("paste", (event) => {
-  const editor = event.target.closest && event.target.closest(".editor");
+  const editor = editingField(event.target);
   if (!editor) return;
+  disarmDeleteUndo();
   event.preventDefault();
   const clipboard = event.clipboardData;
   const html = clipboard ? clipboard.getData("text/html") : "";
@@ -567,7 +728,8 @@ note.addEventListener("paste", (event) => {
   useTagFormatting();
   if (clean && textOf(clean).trim()) document.execCommand("insertHTML", false, clean);
   else document.execCommand("insertText", false, text);
-  syncTaskChrome(editor.closest(".task"));
+  const row = editor.closest(".task");
+  if (row) syncTaskChrome(row);
   scheduleSave();
 });
 
@@ -608,9 +770,16 @@ note.addEventListener("keydown", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "z") {
+    if (!deleteUndoArmed || !undoStack.length || !confirmEl.hidden) return;
+    event.preventDefault();
+    undoDelete();
+    if (!undoStack.length) deleteUndoArmed = false;
+    return;
+  }
   if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
   const editor = document.activeElement;
-  if (!editor || !editor.closest || !editor.closest(".editor")) return;
+  if (!editingField(editor)) return;
   const key = event.key.toLowerCase();
   const command = key === "b" ? "bold"
     : key === "i" ? "italic"
@@ -635,7 +804,11 @@ async function init() {
   if (api && api.load_note) {
     try {
       const loaded = await api.load_note();
-      store = { weeks: loaded.weeks || {} };
+      store = {
+        weeks: loaded.weeks || {},
+        reminder: typeof loaded.reminder === "string" ? loaded.reminder : "",
+        reminderOpen: loaded.reminderOpen === true,
+      };
       if (loaded.unreadable) {
         unreadable = true;
         showError("The saved note could not be read. It was left untouched.");

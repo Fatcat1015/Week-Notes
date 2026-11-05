@@ -33,4 +33,8 @@ Once a task has text, you can set what it costs and mark what happened to it:
 
 The format buttons mark the selected text **bold**, *italic*, <u>underline</u>, or ~~strikethrough~~. The same marks are available with Ctrl+B, Ctrl+I, Ctrl+U, and Ctrl+Shift+X. Copying from the window keeps those four formats.
 
-The left arrow opens the previous week. The right arrow returns toward this week and stays off while you are already here. What you type is saved on its own.
+**Reminders**, at the top of the week, is one paragraph for every week. Open or close it with the heading. Editing it in any week changes it for the others.
+
+The left arrow opens the previous week. The right arrow opens the next week, including weeks still ahead. What you type is saved on its own.
+
+Hover the right side of a task or a deadline for the trash icon. Confirm deletes it. Cancel leaves it. Ctrl+Z puts it back.
