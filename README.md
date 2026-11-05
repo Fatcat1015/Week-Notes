@@ -23,11 +23,11 @@ python -m venv .venv
 
 ## Use it
 
-Type a deadline or a task for a day. Press Enter to start the next one.
+Type a deadline or a task for a day. Press Enter to start the next one. Drag a task to reorder it, or drop it on another day.
 
 Once a task has text, you can set what it costs and mark what happened to it:
 
-- **Time.** Hours, shown as `2 h`.
+- **Time.** Hours, shown as `2 h` or `0.5 h`.
 - **Tick.** Marks the task finished and strikes it through. The close mark hides until you click the tick again.
 - **Close.** Marks the task skipped, turns it grey, and shows **Why this was skipped**. The tick hides until you click the close mark again.
 

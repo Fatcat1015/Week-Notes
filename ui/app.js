@@ -75,9 +75,9 @@ function durationValue(value, max) {
   if (value === "" || value === null || value === undefined) return "";
   const number = Number(value);
   if (!Number.isFinite(number) || number < 0) return "";
-  let whole = Math.floor(number);
-  if (typeof max === "number") whole = Math.min(whole, max);
-  return whole;
+  let rounded = Number(number.toFixed(1));
+  if (typeof max === "number") rounded = Math.min(rounded, max);
+  return rounded;
 }
 
 function textOf(html) {
@@ -242,12 +242,12 @@ function createDurationInput(className, value, label, max) {
   const input = document.createElement("input");
   input.type = "number";
   input.min = "0";
-  input.step = "1";
+  input.step = "0.1";
   input.max = String(max);
   input.className = className;
   input.value = value === "" || value === undefined || value === null ? "" : String(value);
   input.setAttribute("aria-label", label);
-  input.inputMode = "numeric";
+  input.inputMode = "decimal";
   return input;
 }
 
@@ -641,6 +641,123 @@ function ensureTrailingBlank(list) {
   const empty = editor && editor.textContent.trim() === "" && (last.dataset.state || "open") === "open";
   if (!empty) list.append(createTaskRow(blankTask(), placeholderOf(list), labelOf(list)));
 }
+
+let draggedTask = null;
+let suppressClick = false;
+
+function clearDragMarks() {
+  note.querySelectorAll(".is-drop-before, .is-drop-after, .is-dragging").forEach((row) => {
+    row.classList.remove("is-drop-before", "is-drop-after", "is-dragging");
+  });
+}
+
+function dropTargetAt(x, y) {
+  const hit = document.elementFromPoint(x, y);
+  if (!hit || !note.contains(hit) || hit.closest(".reminders")) return null;
+  const section = hit.closest(".day, .deadlines");
+  const list = hit.closest("[data-list]") || (section && section.querySelector("[data-list]"));
+  if (!list) return null;
+  const rows = Array.from(list.querySelectorAll(":scope > .task"));
+  let before = null;
+  for (const row of rows) {
+    const rect = row.getBoundingClientRect();
+    const blank = !taskHasContent(readTask(row));
+    if (blank || y < rect.top + rect.height / 2) {
+      before = row;
+      break;
+    }
+  }
+  return { list, before };
+}
+
+function markDrop(target) {
+  note.querySelectorAll(".is-drop-before, .is-drop-after").forEach((row) => {
+    row.classList.remove("is-drop-before", "is-drop-after");
+  });
+  if (!target || !target.before) return;
+  const before = target.before;
+  if (!taskHasContent(readTask(before)) && before.previousElementSibling) {
+    before.previousElementSibling.classList.add("is-drop-after");
+    return;
+  }
+  before.classList.add("is-drop-before");
+}
+
+function sameDrop(row, target) {
+  if (!target || listOf(row) !== target.list) return false;
+  return target.before === row || row.nextElementSibling === target.before;
+}
+
+function moveDraggedTask(row, target) {
+  if (!target || sameDrop(row, target)) return;
+  const origin = listOf(row);
+  target.list.insertBefore(row, target.before);
+  ensureTrailingBlank(origin);
+  if (origin !== target.list) ensureTrailingBlank(target.list);
+  disarmDeleteUndo();
+  scheduleSave();
+}
+
+function scrollNote(y) {
+  const rect = note.getBoundingClientRect();
+  if (y < rect.top + 32) note.scrollTop -= 16;
+  else if (y > rect.bottom - 32) note.scrollTop += 16;
+}
+
+note.addEventListener("pointerdown", (event) => {
+  if (event.button !== 0 || !confirmEl.hidden) return;
+  if (event.target.closest("button, input, textarea")) return;
+  const row = event.target.closest && event.target.closest(".task");
+  if (!row || !note.contains(row) || !taskHasContent(readTask(row))) return;
+  const pointerId = event.pointerId;
+  const startX = event.clientX;
+  const startY = event.clientY;
+  let active = false;
+
+  function move(pointerEvent) {
+    if (pointerEvent.pointerId !== pointerId) return;
+    const dx = pointerEvent.clientX - startX;
+    const dy = pointerEvent.clientY - startY;
+    if (!active) {
+      if (dx * dx + dy * dy < 25) return;
+      active = true;
+      draggedTask = row;
+      suppressClick = true;
+      row.classList.add("is-dragging");
+      document.body.classList.add("is-task-drag");
+      const selection = window.getSelection();
+      if (selection) selection.removeAllRanges();
+    }
+    scrollNote(pointerEvent.clientY);
+    markDrop(dropTargetAt(pointerEvent.clientX, pointerEvent.clientY));
+  }
+
+  function end(pointerEvent) {
+    document.removeEventListener("pointermove", move);
+    document.removeEventListener("pointerup", end);
+    document.removeEventListener("pointercancel", end);
+    if (!active) return;
+    const target = dropTargetAt(pointerEvent.clientX, pointerEvent.clientY);
+    clearDragMarks();
+    document.body.classList.remove("is-task-drag");
+    draggedTask = null;
+    moveDraggedTask(row, target);
+    setTimeout(() => {
+      suppressClick = false;
+    }, 0);
+  }
+
+  document.addEventListener("pointermove", move);
+  document.addEventListener("pointerup", end);
+  document.addEventListener("pointercancel", end);
+});
+
+note.addEventListener("click", (event) => {
+  if (!suppressClick) return;
+  suppressClick = false;
+  event.preventDefault();
+  event.stopPropagation();
+}, true);
 
 prevBtn.addEventListener("click", () => {
   closeDeleteConfirm();

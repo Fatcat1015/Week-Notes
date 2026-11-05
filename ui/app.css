@@ -207,6 +207,7 @@ main::-webkit-scrollbar-button {
   padding: 2px 0;
   outline: none;
   cursor: text;
+  font-size: 12px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   user-select: text;
@@ -218,12 +219,34 @@ main::-webkit-scrollbar-button {
   pointer-events: none;
 }
 
+.editor[data-placeholder="Add a task"]:empty::before,
+.editor[data-placeholder="Date and what is due"]:empty::before {
+  font-size: 12px;
+}
+
 .task + .task {
   margin-top: 4px;
 }
 
 .task {
   position: relative;
+}
+
+.task.is-dragging {
+  opacity: 0.4;
+}
+
+.task.is-drop-before {
+  box-shadow: inset 0 2px 0 var(--ink);
+}
+
+.task.is-drop-after {
+  box-shadow: inset 0 -2px 0 var(--ink);
+}
+
+body.is-task-drag {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .task-line {
@@ -267,7 +290,7 @@ main::-webkit-scrollbar-button {
 }
 
 .task-time input {
-  width: 3ch;
+  width: 5ch;
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -404,6 +427,7 @@ main::-webkit-scrollbar-button {
   padding: 2px 0 4px;
   outline: none;
   cursor: text;
+  font-size: 12px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   user-select: text;
@@ -412,6 +436,7 @@ main::-webkit-scrollbar-button {
 .reminder-body:empty::before {
   content: attr(data-placeholder);
   color: var(--faint);
+  font-size: 12px;
   pointer-events: none;
 }
 
@@ -481,11 +506,12 @@ main::-webkit-scrollbar-button {
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .why-input::placeholder {
   color: var(--faint);
+  font-size: 12px;
 }
 
 .editor b,
