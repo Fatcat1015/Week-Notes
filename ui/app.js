@@ -251,13 +251,22 @@ function createDurationInput(className, value, label, max) {
   return input;
 }
 
+function fitHourField(input) {
+  const length = String(input.value || "").length;
+  input.style.width = `${Math.max(length, 1)}ch`;
+}
+
 function createTimeColumn(task) {
   const column = document.createElement("div");
   column.className = "task-time";
   const hours = createDurationInput("task-hours", task.hours, "Hours", 999);
+  fitHourField(hours);
   const hourLabel = document.createElement("span");
   hourLabel.textContent = "h";
   column.append(hours, hourLabel);
+  column.addEventListener("click", (event) => {
+    if (event.target !== hours) hours.focus();
+  });
   return column;
 }
 
@@ -811,6 +820,7 @@ note.addEventListener("input", (event) => {
   }
   const row = event.target.closest && event.target.closest(".task");
   if (!row) return;
+  if (event.target.classList && event.target.classList.contains("task-hours")) fitHourField(event.target);
   syncTaskChrome(row);
   scheduleSave();
 });
@@ -821,6 +831,7 @@ note.addEventListener("change", (event) => {
   if (!input.classList.contains("task-hours")) return;
   const hours = durationValue(input.value, 999);
   input.value = hours === "" ? "" : String(hours);
+  fitHourField(input);
   scheduleSave();
 });
 
