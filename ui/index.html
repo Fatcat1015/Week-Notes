@@ -7,12 +7,20 @@
   </head>
   <body>
     <header class="top">
+      <button type="button" class="collapse" id="collapse" aria-label="Minimize" title="Minimize">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6 H10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" /></svg>
+      </button>
       <button type="button" class="nav" id="prev" aria-label="Previous week">‹</button>
       <div class="week-label">
         <div id="range"></div>
         <div id="when" class="when"></div>
       </div>
       <button type="button" class="nav" id="next" aria-label="Next week">›</button>
+      <button type="button" class="collapse" id="settings-open" aria-label="Settings" title="Settings">
+        <svg viewBox="0 0 12 12" aria-hidden="true">
+          <path fill="currentColor" fill-rule="evenodd" d="M5.31 2.11 L5.05 0.63 L6.95 0.63 L6.69 2.11 L8.27 2.76 L9.13 1.54 L10.46 2.87 L9.24 3.73 L9.89 5.31 L11.37 5.05 L11.37 6.95 L9.89 6.69 L9.24 8.27 L10.46 9.13 L9.13 10.46 L8.27 9.24 L6.69 9.89 L6.95 11.37 L5.05 11.37 L5.31 9.89 L3.73 9.24 L2.87 10.46 L1.54 9.13 L2.76 8.27 L2.11 6.69 L0.63 6.95 L0.63 5.05 L2.11 5.31 L2.76 3.73 L1.54 2.87 L2.87 1.54 L3.73 2.76 Z M6 4.45 A1.55 1.55 0 1 0 6 7.55 A1.55 1.55 0 1 0 6 4.45 Z" />
+        </svg>
+      </button>
     </header>
     <div class="toolbar" role="toolbar" aria-label="Format">
       <button type="button" class="tool" data-cmd="bold" aria-label="Bold" aria-pressed="false"><b>B</b></button>
@@ -28,6 +36,41 @@
         <div class="confirm-actions">
           <button type="button" id="confirm-cancel">Cancel</button>
           <button type="button" id="confirm-ok">Confirm</button>
+        </div>
+      </div>
+    </div>
+    <div id="settings" class="confirm" hidden>
+      <div class="confirm-card settings-card" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <p id="settings-title">Settings</p>
+        <span class="settings-label" id="settings-saves-label">Task saves</span>
+        <p id="settings-path" class="settings-path"></p>
+        <div class="settings-actions">
+          <button type="button" id="settings-locate">Show in folder</button>
+          <button type="button" id="settings-export">Export</button>
+          <button type="button" id="settings-import">Import</button>
+        </div>
+        <span class="settings-label" id="settings-language-label">Language</span>
+        <div class="settings-languages" role="group" aria-labelledby="settings-language-label">
+          <button type="button" id="language-en" data-language="en" aria-pressed="true">English</button>
+          <button type="button" id="language-zh" data-language="zh" aria-pressed="false">中文</button>
+        </div>
+        <span class="settings-label" id="settings-size-label">Size</span>
+        <div class="settings-size">
+          <input type="range" id="settings-size" min="10" max="24" step="1" value="12" aria-labelledby="settings-size-label" />
+          <span id="settings-size-value">12</span>
+        </div>
+        <span class="settings-label" id="settings-font-label">Font</span>
+        <div class="settings-font-row">
+          <button type="button" id="settings-font" class="settings-font" aria-expanded="false" aria-controls="font-picker">ELEGANT TYPEWRITER</button>
+          <button type="button" id="settings-font-default" class="settings-font-default">Default</button>
+        </div>
+        <div id="font-picker" class="font-picker" hidden>
+          <p id="font-ask" class="font-ask">Which installed font should this use?</p>
+          <input type="search" id="font-search" class="font-search" placeholder="Search fonts" autocomplete="off" spellcheck="false" aria-controls="font-list" />
+          <div id="font-list" class="font-list" role="listbox"></div>
+        </div>
+        <div class="confirm-actions">
+          <button type="button" id="settings-close">Close</button>
         </div>
       </div>
     </div>

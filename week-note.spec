@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
-datas = [("ui", "ui"), ("icon.ico", ".")]
+datas = [("ui", "ui"), ("icon.ico", "."), ("icon.png", ".")]
 binaries = []
 hiddenimports = ["webview.platforms.winforms", "clr"]
 

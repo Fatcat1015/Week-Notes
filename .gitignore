@@ -4,3 +4,9 @@ __pycache__/
 *.json.tmp
 build/
 *.exe.old
+
+# Notes and window position. These live in %APPDATA%\week-note.
+note.json
+window.json
+settings.json
+.week-note/

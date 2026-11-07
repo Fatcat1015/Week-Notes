@@ -1,4 +1,64 @@
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const TEXT = {
+  en: {
+    weekday0: "Mon", weekday1: "Tue", weekday2: "Wed", weekday3: "Thu",
+    weekday4: "Fri", weekday5: "Sat", weekday6: "Sun",
+    minimize: "Minimize", previousWeek: "Previous week", nextWeek: "Next week",
+    settings: "Settings", format: "Format", bold: "Bold", italic: "Italic",
+    underline: "Underline", strike: "Strikethrough",
+    thisWeek: "This week", pastWeek: "Past week", futureWeek: "Future week",
+    reminders: "Reminders", reminderPlaceholder: "A note for every week",
+    deadlines: "Deadlines", deadlinePlaceholder: "Date and what is due", deadline: "Deadline",
+    addTask: "Add a task", today: "Today", task: "Task",
+    dragDeadline: "Drag deadline", dragTask: "Drag task",
+    completeTask: "Complete task", skipTask: "Skip task", done: "Done", skip: "Skip",
+    whySkipped: "Why this was skipped", hour: "h", hours: "Hours",
+    deleteDeadline: "Delete deadline", deleteTask: "Delete task",
+    confirmDeleteDeadline: "Delete this deadline?", confirmDeleteTask: "Delete this task?",
+    cancel: "Cancel", confirm: "Confirm",
+    taskSaves: "Task saves", showInFolder: "Show in folder", exportSaves: "Export",
+    importSaves: "Import", language: "Language", close: "Close",
+    size: "Size",     font: "Font", fontDefault: "Default",
+    fontAsk: "Which installed font should this use?",
+    fontSearch: "Search fonts",
+    fontLoading: "Loading fonts…",
+    saveFailed: "Could not save the note. The previous file was left as it was.",
+    readFailed: "The saved note could not be read. It was left untouched.",
+    openFailed: "The saved note could not be opened.",
+    importInvalid: "That file is not a Week Note save.",
+    importFailed: "That file could not be read.",
+    exportFailed: "The save could not be exported.",
+  },
+  zh: {
+    weekday0: "周一", weekday1: "周二", weekday2: "周三", weekday3: "周四",
+    weekday4: "周五", weekday5: "周六", weekday6: "周日",
+    minimize: "最小化", previousWeek: "上一周", nextWeek: "下一周",
+    settings: "设置", format: "格式", bold: "粗体", italic: "斜体",
+    underline: "下划线", strike: "删除线",
+    thisWeek: "本周", pastWeek: "过去的一周", futureWeek: "未来的一周",
+    reminders: "提醒", reminderPlaceholder: "每周都在的备注",
+    deadlines: "截止日期", deadlinePlaceholder: "日期和事项", deadline: "截止日期",
+    addTask: "添加任务", today: "今天", task: "任务",
+    dragDeadline: "拖动截止日期", dragTask: "拖动任务",
+    completeTask: "完成任务", skipTask: "跳过任务", done: "完成", skip: "跳过",
+    whySkipped: "跳过的原因", hour: "时", hours: "小时",
+    deleteDeadline: "删除截止日期", deleteTask: "删除任务",
+    confirmDeleteDeadline: "删除这个截止日期？", confirmDeleteTask: "删除这个任务？",
+    cancel: "取消", confirm: "确认",
+    taskSaves: "任务存档", showInFolder: "打开位置", exportSaves: "导出",
+    importSaves: "导入", language: "语言", close: "关闭",
+    size: "字号",     font: "字体", fontDefault: "默认",
+    fontAsk: "使用哪一种已安装的字体？",
+    fontSearch: "搜索字体",
+    fontLoading: "正在载入字体…",
+    saveFailed: "无法保存笔记，原文件未改动。",
+    readFailed: "无法读取已保存的笔记，文件未改动。",
+    openFailed: "无法打开已保存的笔记。",
+    importInvalid: "这不是 Week Note 的存档。",
+    importFailed: "无法读取这个文件。",
+    exportFailed: "无法导出存档。",
+  },
+};
+
 const ALLOWED = new Set(["B", "STRONG", "I", "EM", "U", "S", "STRIKE", "DEL", "BR", "P", "DIV"]);
 
 const note = document.getElementById("note");
@@ -6,12 +66,63 @@ const confirmEl = document.getElementById("confirm");
 const confirmQuestion = document.getElementById("confirm-question");
 const confirmCancel = document.getElementById("confirm-cancel");
 const confirmOk = document.getElementById("confirm-ok");
+const settingsEl = document.getElementById("settings");
+const settingsBtn = document.getElementById("settings-open");
+const settingsTitle = document.getElementById("settings-title");
+const settingsSavesLabel = document.getElementById("settings-saves-label");
+const settingsPath = document.getElementById("settings-path");
+const settingsLocate = document.getElementById("settings-locate");
+const settingsExport = document.getElementById("settings-export");
+const settingsImport = document.getElementById("settings-import");
+const settingsLanguageLabel = document.getElementById("settings-language-label");
+const settingsSizeLabel = document.getElementById("settings-size-label");
+const settingsSize = document.getElementById("settings-size");
+const settingsSizeValue = document.getElementById("settings-size-value");
+const settingsFontLabel = document.getElementById("settings-font-label");
+const settingsFont = document.getElementById("settings-font");
+const settingsFontDefault = document.getElementById("settings-font-default");
+const fontPicker = document.getElementById("font-picker");
+const fontAsk = document.getElementById("font-ask");
+const fontSearch = document.getElementById("font-search");
+const fontList = document.getElementById("font-list");
+const settingsClose = document.getElementById("settings-close");
+const languageButtons = Array.from(document.querySelectorAll(".settings-languages button"));
 const rangeEl = document.getElementById("range");
 const whenEl = document.getElementById("when");
+const collapseBtn = document.getElementById("collapse");
 const prevBtn = document.getElementById("prev");
 const nextBtn = document.getElementById("next");
 const statusEl = document.getElementById("status");
 const tools = Array.from(document.querySelectorAll(".tool"));
+
+const BUNDLED_FONT = "Courier Prime";
+const ENGLISH_FONT = "ELEGANT TYPEWRITER";
+const CHINESE_FONT = "汇文明朝体";
+const CHINESE_FAMILY = "Huiwen-mincho";
+const DEFAULT_FONTS = { en: ENGLISH_FONT, zh: CHINESE_FONT };
+const MIN_FONT_SIZE = 10;
+const MAX_FONT_SIZE = 24;
+const DEFAULT_FONT_SIZE = 12;
+
+let lang = "en";
+let chosenFonts = { en: "", zh: "" };
+let fontSize = DEFAULT_FONT_SIZE;
+let fontLoad = 0;
+let errorKey = "";
+
+function t(key) {
+  const pack = TEXT[lang] || TEXT.en;
+  return pack[key] || TEXT.en[key] || key;
+}
+
+function weekdayName(index) {
+  return t(`weekday${index}`);
+}
+
+function taskLabel(index) {
+  const name = weekdayName(index);
+  return lang === "zh" ? `${name}任务` : `${name} task`;
+}
 
 let store = { weeks: {}, reminder: "", reminderOpen: false };
 let viewMonday = startOfWeek(new Date());
@@ -43,24 +154,28 @@ function iso(date) {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
+function formatDay(date, withYear) {
+  const locale = lang === "zh" ? "zh-CN" : "en-US";
+  const options = { month: lang === "zh" ? "numeric" : "short", day: "numeric" };
+  if (withYear) options.year = "numeric";
+  return date.toLocaleDateString(locale, options);
+}
+
 function formatRange(monday) {
   const sunday = addDays(monday, 6);
-  const left = monday.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  const right = sunday.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  if (monday.getFullYear() !== sunday.getFullYear()) {
-    return `${left}, ${monday.getFullYear()} – ${right}, ${sunday.getFullYear()}`;
-  }
   const thisYear = new Date().getFullYear();
-  const year = monday.getFullYear() !== thisYear ? `, ${monday.getFullYear()}` : "";
-  return `${left} – ${right}${year}`;
+  const crossYear = monday.getFullYear() !== sunday.getFullYear();
+  const left = formatDay(monday, crossYear || monday.getFullYear() !== thisYear);
+  const right = formatDay(sunday, crossYear || sunday.getFullYear() !== thisYear);
+  return `${left} – ${right}`;
 }
 
 function weekPlace(monday) {
   const view = iso(monday);
   const current = iso(startOfWeek(new Date()));
-  if (view === current) return "This week";
-  if (view < current) return "Past week";
-  return "Future week";
+  if (view === current) return t("thisWeek");
+  if (view < current) return t("pastWeek");
+  return t("futureWeek");
 }
 
 function weekId(monday) {
@@ -191,14 +306,240 @@ function writeEditor(editor, html) {
   editor.innerHTML = sanitize(html || "");
 }
 
-function showError(message) {
+function showError(key) {
+  errorKey = key;
   statusEl.hidden = false;
-  statusEl.textContent = message;
+  statusEl.textContent = t(key);
 }
 
 function clearError() {
+  errorKey = "";
   statusEl.hidden = true;
   statusEl.textContent = "";
+}
+
+function applyChrome() {
+  document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+  collapseBtn.setAttribute("aria-label", t("minimize"));
+  collapseBtn.title = t("minimize");
+  prevBtn.setAttribute("aria-label", t("previousWeek"));
+  nextBtn.setAttribute("aria-label", t("nextWeek"));
+  settingsBtn.setAttribute("aria-label", t("settings"));
+  settingsBtn.title = t("settings");
+  document.querySelector(".toolbar").setAttribute("aria-label", t("format"));
+  const toolNames = { bold: "bold", italic: "italic", underline: "underline", strikeThrough: "strike" };
+  tools.forEach((button) => {
+    const name = toolNames[button.dataset.cmd];
+    if (name) button.setAttribute("aria-label", t(name));
+  });
+  confirmCancel.textContent = t("cancel");
+  confirmOk.textContent = t("confirm");
+  settingsTitle.textContent = t("settings");
+  settingsSavesLabel.textContent = t("taskSaves");
+  settingsLocate.textContent = t("showInFolder");
+  settingsExport.textContent = t("exportSaves");
+  settingsImport.textContent = t("importSaves");
+  settingsLanguageLabel.textContent = t("language");
+  settingsSizeLabel.textContent = t("size");
+  settingsFontLabel.textContent = t("font");
+  settingsFontDefault.textContent = t("fontDefault");
+  fontAsk.textContent = t("fontAsk");
+  fontSearch.placeholder = t("fontSearch");
+  settingsClose.textContent = t("close");
+  applyFont();
+  applyFontSize();
+  languageButtons.forEach((button) => {
+    button.setAttribute("aria-pressed", button.dataset.language === lang ? "true" : "false");
+  });
+  if (errorKey) statusEl.textContent = t(errorKey);
+}
+
+function setLanguage(next) {
+  lang = next === "zh" ? "zh" : "en";
+  applyChrome();
+  if (mounted) showWeek(viewMonday);
+}
+
+function activeFontName() {
+  const chosen = chosenFonts[lang];
+  if (chosen) return chosen;
+  return DEFAULT_FONTS[lang];
+}
+
+function sameChineseFont(name) {
+  return name === CHINESE_FONT || name === CHINESE_FAMILY;
+}
+
+function fontsMatch(left, right) {
+  return left === right || (sameChineseFont(left) && sameChineseFont(right));
+}
+
+function fontLabel(name) {
+  if (sameChineseFont(name)) return lang === "zh" ? CHINESE_FONT : CHINESE_FAMILY;
+  return name;
+}
+
+function fontFamily(name) {
+  const cleaned = String(name || "").replace(/["\\]/g, "");
+  const lead = sameChineseFont(cleaned) ? [CHINESE_FAMILY, CHINESE_FONT] : [cleaned];
+  const parts = [];
+  lead.concat([BUNDLED_FONT, "Courier New", "sans-serif"]).forEach((item) => {
+    if (item && !parts.includes(item)) parts.push(item);
+  });
+  return parts.map((item) => (item === "sans-serif" ? item : `"${item}"`)).join(", ");
+}
+
+function applyFont() {
+  const name = activeFontName();
+  document.documentElement.style.setProperty("--ui-font", fontFamily(name));
+  settingsFont.textContent = fontLabel(name);
+  settingsFont.style.fontFamily = fontFamily(name);
+}
+
+function clampFontSize(value) {
+  const size = Number(value);
+  if (!Number.isInteger(size)) return DEFAULT_FONT_SIZE;
+  return Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, size));
+}
+
+function applyFontSize() {
+  document.documentElement.style.setProperty("--note-size", `${fontSize}px`);
+  settingsSize.value = String(fontSize);
+  settingsSizeValue.textContent = String(fontSize);
+}
+
+function restoreDefaultFonts() {
+  chosenFonts = { en: DEFAULT_FONTS.en, zh: DEFAULT_FONTS.zh };
+  applyFont();
+  closeFontPicker();
+  const api = window.pywebview && window.pywebview.api;
+  if (api && api.reset_fonts) api.reset_fonts();
+}
+
+function closeFontPicker() {
+  fontLoad += 1;
+  fontPicker.hidden = true;
+  settingsFont.setAttribute("aria-expanded", "false");
+}
+
+function fontSearchText(name) {
+  return sameChineseFont(name) ? `${CHINESE_FONT} ${CHINESE_FAMILY}` : name;
+}
+
+function filterFontList() {
+  const query = fontSearch.value.trim().toLocaleLowerCase();
+  fontList.querySelectorAll("button").forEach((button) => {
+    const haystack = `${button.dataset.search || ""} ${button.textContent}`.toLocaleLowerCase();
+    button.hidden = Boolean(query) && !haystack.includes(query);
+  });
+}
+
+function chooseFont(name) {
+  chosenFonts[lang] = name;
+  applyFont();
+  closeFontPicker();
+  fontList.querySelectorAll("button").forEach((button) => {
+    button.setAttribute("aria-pressed", fontsMatch(button.dataset.font, name) ? "true" : "false");
+  });
+  const api = window.pywebview && window.pywebview.api;
+  if (api && api.set_font) api.set_font(name, lang);
+}
+
+function rememberFont(items, seen, name, chinese, label) {
+  const cleaned = String(name || "").trim();
+  if (!cleaned || seen.has(cleaned) || (sameChineseFont(cleaned) && seen.has(CHINESE_FONT))) return;
+  const family = sameChineseFont(cleaned) ? CHINESE_FAMILY : cleaned;
+  const stored = sameChineseFont(cleaned) ? (lang === "zh" ? CHINESE_FONT : CHINESE_FAMILY) : cleaned;
+  if (sameChineseFont(cleaned)) {
+    seen.add(CHINESE_FONT);
+    seen.add(CHINESE_FAMILY);
+  } else {
+    seen.add(cleaned);
+  }
+  const localized = String(label || "").trim();
+  const showLocalized = lang === "zh" && /[\u3400-\u9fff]/.test(localized);
+  items.push({
+    name: stored,
+    family,
+    chinese: Boolean(chinese) || sameChineseFont(cleaned),
+    label: showLocalized ? localized : fontLabel(stored),
+    search: `${localized} ${cleaned} ${stored} ${fontSearchText(cleaned)}`,
+  });
+}
+
+function collectFonts(fonts) {
+  const items = [];
+  const seen = new Set();
+  if (lang === "zh") rememberFont(items, seen, CHINESE_FONT, true, CHINESE_FONT);
+  else rememberFont(items, seen, ENGLISH_FONT, false, ENGLISH_FONT);
+  fonts.forEach((entry) => {
+    if (typeof entry === "string") {
+      rememberFont(items, seen, entry, false, entry);
+      return;
+    }
+    if (!entry) return;
+    rememberFont(items, seen, entry.name, entry.chinese, entry.label);
+  });
+  rememberFont(items, seen, BUNDLED_FONT, false, BUNDLED_FONT);
+  if (lang !== "zh") return items;
+  const first = [];
+  const rest = [];
+  items.forEach((item) => {
+    if (item.chinese || sameChineseFont(item.name)) first.push(item);
+    else rest.push(item);
+  });
+  return first.concat(rest);
+}
+
+function renderFontList(fonts) {
+  const current = activeFontName();
+  fontList.replaceChildren();
+  let currentButton = null;
+  collectFonts(fonts).forEach((item) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.font = item.name;
+    button.dataset.search = item.search;
+    button.textContent = item.label;
+    const stack = `${fontFamily(item.family)}, var(--ui-font)`;
+    button.style.fontFamily = /[\u3400-\u9fff]/.test(item.label) ? stack : `var(--ui-font), ${stack}`;
+    button.setAttribute("role", "option");
+    button.setAttribute("aria-pressed", fontsMatch(item.name, current) ? "true" : "false");
+    button.addEventListener("click", () => chooseFont(item.name));
+    fontList.append(button);
+    if (fontsMatch(item.name, current)) currentButton = button;
+  });
+  if (currentButton) currentButton.scrollIntoView({ block: "nearest" });
+  filterFontList();
+}
+
+async function openFontPicker() {
+  const ticket = ++fontLoad;
+  fontPicker.hidden = false;
+  settingsFont.setAttribute("aria-expanded", "true");
+  fontAsk.textContent = t("fontAsk");
+  fontSearch.placeholder = t("fontSearch");
+  fontSearch.value = "";
+  fontList.replaceChildren();
+  const loading = document.createElement("p");
+  loading.className = "font-loading";
+  loading.textContent = t("fontLoading");
+  fontList.append(loading);
+  fontSearch.focus();
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+  if (ticket !== fontLoad) return;
+  const api = window.pywebview && window.pywebview.api;
+  let fonts = [];
+  if (api && api.list_fonts) {
+    try {
+      const result = await api.list_fonts();
+      if (result && Array.isArray(result.fonts)) fonts = result.fonts;
+    } catch (error) {
+      fonts = [];
+    }
+  }
+  if (ticket !== fontLoad) return;
+  renderFontList(fonts);
 }
 
 function strokeIcon(pathData) {
@@ -224,6 +565,10 @@ function trashIcon() {
   return strokeIcon("M2.5 3.5 H9.5 M4.6 3.5 V2.6 H7.4 V3.5 M3.3 3.5 L3.9 10.2 H8.1 L8.7 3.5");
 }
 
+function gripIcon() {
+  return strokeIcon("M1.5 3.4 H10.5 M1.5 6 H10.5 M1.5 8.6 H10.5");
+}
+
 function actionButton(action, state) {
   const pressed = stateForAction(action) === state;
   const button = document.createElement("button");
@@ -233,8 +578,8 @@ function actionButton(action, state) {
   button.append(actionIcon(action));
   button.hidden = state !== "open" && !pressed;
   button.setAttribute("aria-pressed", pressed ? "true" : "false");
-  button.setAttribute("aria-label", action === "done" ? "Complete task" : "Skip task");
-  button.title = action === "done" ? "Done" : "Skip";
+  button.setAttribute("aria-label", action === "done" ? t("completeTask") : t("skipTask"));
+  button.title = action === "done" ? t("done") : t("skip");
   return button;
 }
 
@@ -259,10 +604,10 @@ function fitHourField(input) {
 function createTimeColumn(task) {
   const column = document.createElement("div");
   column.className = "task-time";
-  const hours = createDurationInput("task-hours", task.hours, "Hours", 999);
+  const hours = createDurationInput("task-hours", task.hours, t("hours"), 999);
   fitHourField(hours);
   const hourLabel = document.createElement("span");
-  hourLabel.textContent = "h";
+  hourLabel.textContent = t("hour");
   column.append(hours, hourLabel);
   column.addEventListener("click", (event) => {
     if (event.target !== hours) hours.focus();
@@ -274,9 +619,9 @@ function createWhyInput(value) {
   const input = document.createElement("input");
   input.type = "text";
   input.className = "why-input";
-  input.placeholder = "Why this was skipped";
+  input.placeholder = t("whySkipped");
   input.value = value || "";
-  input.setAttribute("aria-label", "Why this was skipped");
+  input.setAttribute("aria-label", t("whySkipped"));
   return input;
 }
 
@@ -292,9 +637,11 @@ function syncTaskChrome(row) {
   time.hidden = hidden;
   const edge = row.querySelector(".task-edge");
   if (edge) edge.hidden = hidden;
+  const grip = row.querySelector(".task-grip");
+  if (grip) grip.hidden = hidden;
 }
 
-function createTaskRow(task, placeholder, label) {
+function createTaskRow(task, placeholder, label, kind) {
   const state = task.state || "open";
   const row = document.createElement("div");
   row.className = "task";
@@ -305,6 +652,14 @@ function createTaskRow(task, placeholder, label) {
 
   const line = document.createElement("div");
   line.className = "task-line";
+
+  const grip = document.createElement("button");
+  grip.type = "button";
+  grip.className = "task-grip";
+  grip.tabIndex = -1;
+  const deadline = kind === "deadline";
+  grip.setAttribute("aria-label", deadline ? t("dragDeadline") : t("dragTask"));
+  grip.append(gripIcon());
 
   const editor = document.createElement("div");
   editor.className = "editor";
@@ -325,7 +680,7 @@ function createTaskRow(task, placeholder, label) {
   const remove = document.createElement("button");
   remove.type = "button";
   remove.className = "task-delete";
-  remove.setAttribute("aria-label", label === "Deadline" ? "Delete deadline" : "Delete task");
+  remove.setAttribute("aria-label", deadline ? t("deleteDeadline") : t("deleteTask"));
   remove.append(trashIcon());
   const edge = document.createElement("div");
   edge.className = "task-edge";
@@ -333,17 +688,17 @@ function createTaskRow(task, placeholder, label) {
   const tail = document.createElement("div");
   tail.className = "task-tail";
   tail.append(time, actions);
-  line.append(editor, tail, edge);
+  line.append(grip, editor, tail, edge);
   row.append(line);
   if (state === "skipped") row.append(createWhyInput(task.why));
   syncTaskChrome(row);
   return row;
 }
 
-function fillList(list, tasks, placeholder, label) {
+function fillList(list, tasks, placeholder, label, kind) {
   list.replaceChildren();
-  tasks.forEach((task) => list.append(createTaskRow(task, placeholder, label)));
-  list.append(createTaskRow(blankTask(), placeholder, label));
+  tasks.forEach((task) => list.append(createTaskRow(task, placeholder, label, kind)));
+  list.append(createTaskRow(blankTask(), placeholder, label, kind));
 }
 
 function renderReminder() {
@@ -358,14 +713,14 @@ function renderReminder() {
   mark.className = "reminder-mark";
   mark.setAttribute("aria-hidden", "true");
   mark.textContent = open ? "▾" : "▸";
-  toggle.append(mark, document.createTextNode("Reminders"));
+  toggle.append(mark, document.createTextNode(t("reminders")));
   const body = document.createElement("div");
   body.className = "reminder-body";
   body.contentEditable = "true";
   body.spellcheck = true;
-  body.dataset.placeholder = "A note for every week";
+  body.dataset.placeholder = t("reminderPlaceholder");
   body.setAttribute("role", "textbox");
-  body.setAttribute("aria-label", "Reminders");
+  body.setAttribute("aria-label", t("reminders"));
   writeEditor(body, store.reminder || "");
   body.hidden = !open;
   toggle.addEventListener("click", () => {
@@ -397,10 +752,10 @@ function render() {
   const deadlines = document.createElement("section");
   deadlines.className = "block deadlines";
   const deadlinesHeading = document.createElement("h2");
-  deadlinesHeading.textContent = "Deadlines";
+  deadlinesHeading.textContent = t("deadlines");
   const deadlineList = document.createElement("div");
   deadlineList.dataset.list = "deadlines";
-  fillList(deadlineList, week.deadlines, "Date and what is due", "Deadline");
+  fillList(deadlineList, week.deadlines, t("deadlinePlaceholder"), t("deadline"), "deadline");
   deadlines.append(deadlinesHeading, deadlineList);
   note.append(deadlines);
 
@@ -410,11 +765,12 @@ function render() {
     const section = document.createElement("section");
     section.className = dayId === today ? "block day is-today" : "block day";
     const heading = document.createElement("h2");
-    heading.textContent = `${WEEKDAYS[index]} ${date.getDate()}`;
+    heading.textContent = `${weekdayName(index)} ${date.getDate()}`;
+    if (dayId === today) heading.dataset.today = t("today");
     const list = document.createElement("div");
     list.dataset.list = "day";
     list.dataset.day = dayId;
-    fillList(list, week.days[dayId].tasks, "Add a task", `${WEEKDAYS[index]} task`);
+    fillList(list, week.days[dayId].tasks, t("addTask"), taskLabel(index), "task");
     section.append(heading, list);
     note.append(section);
   }
@@ -490,12 +846,12 @@ async function saveNow() {
   try {
     const result = await api.save_note(prune(store));
     if (!result || result.ok !== true) {
-      showError("Could not save the note. The previous file was left as it was.");
+      showError("saveFailed");
       return;
     }
     clearError();
   } catch (error) {
-    showError("Could not save the note. The previous file was left as it was.");
+    showError("saveFailed");
   }
 }
 
@@ -553,8 +909,8 @@ function openDeleteConfirm(row) {
   pendingDelete = row;
   const list = listOf(row);
   confirmQuestion.textContent = list && list.dataset.list === "deadlines"
-    ? "Delete this deadline?"
-    : "Delete this task?";
+    ? t("confirmDeleteDeadline")
+    : t("confirmDeleteTask");
   confirmEl.hidden = false;
   confirmCancel.focus();
 }
@@ -588,7 +944,7 @@ function undoDelete() {
     ? note.querySelector('[data-list="deadlines"]')
     : note.querySelector(`[data-list="day"][data-day="${item.dayId}"]`);
   if (!list) return;
-  const row = createTaskRow(item.task, placeholderOf(list), labelOf(list));
+  const row = createTaskRow(item.task, placeholderOf(list), labelOf(list), list.dataset.list === "deadlines" ? "deadline" : "task");
   const rows = list.querySelectorAll(":scope > .task");
   list.insertBefore(row, rows[item.index] || null);
   ensureTrailingBlank(list);
@@ -640,7 +996,7 @@ function placeholderOf(list) {
 
 function labelOf(list) {
   const editor = list.querySelector(".editor");
-  return editor ? editor.getAttribute("aria-label") : "Task";
+  return editor ? editor.getAttribute("aria-label") : t("task");
 }
 
 function ensureTrailingBlank(list) {
@@ -648,7 +1004,14 @@ function ensureTrailingBlank(list) {
   const last = rows[rows.length - 1];
   const editor = last && last.querySelector(".editor");
   const empty = editor && editor.textContent.trim() === "" && (last.dataset.state || "open") === "open";
-  if (!empty) list.append(createTaskRow(blankTask(), placeholderOf(list), labelOf(list)));
+  if (!empty) {
+    list.append(createTaskRow(
+      blankTask(),
+      placeholderOf(list),
+      labelOf(list),
+      list.dataset.list === "deadlines" ? "deadline" : "task",
+    ));
+  }
 }
 
 let draggedTask = null;
@@ -714,10 +1077,12 @@ function scrollNote(y) {
 }
 
 note.addEventListener("pointerdown", (event) => {
-  if (event.button !== 0 || !confirmEl.hidden) return;
-  if (event.target.closest("button, input, textarea")) return;
-  const row = event.target.closest && event.target.closest(".task");
-  if (!row || !note.contains(row) || !taskHasContent(readTask(row))) return;
+  if (event.button !== 0 || !confirmEl.hidden || !settingsEl.hidden) return;
+  const grip = event.target.closest && event.target.closest(".task-grip");
+  if (!grip || !note.contains(grip)) return;
+  const row = grip.closest(".task");
+  if (!row || !taskHasContent(readTask(row))) return;
+  event.preventDefault();
   const pointerId = event.pointerId;
   const startX = event.clientX;
   const startY = event.clientY;
@@ -767,6 +1132,124 @@ note.addEventListener("click", (event) => {
   event.preventDefault();
   event.stopPropagation();
 }, true);
+
+collapseBtn.addEventListener("click", () => {
+  const api = window.pywebview && window.pywebview.api;
+  if (api && api.collapse_to_icon) api.collapse_to_icon();
+});
+
+function closeSettings() {
+  closeFontPicker();
+  settingsEl.hidden = true;
+}
+
+async function openSettings() {
+  closeDeleteConfirm();
+  applyChrome();
+  settingsEl.hidden = false;
+  settingsClose.focus();
+  const api = window.pywebview && window.pywebview.api;
+  if (!api || !api.get_settings) return;
+  try {
+    const settings = await api.get_settings();
+    if (!settingsEl.hidden) {
+      settingsPath.textContent = settings && settings.savePath ? settings.savePath : "";
+    }
+  } catch (error) {
+    settingsPath.textContent = "";
+  }
+}
+
+settingsBtn.addEventListener("click", () => {
+  if (settingsEl.hidden) openSettings();
+  else closeSettings();
+});
+
+settingsClose.addEventListener("click", closeSettings);
+
+settingsEl.addEventListener("click", (event) => {
+  if (event.target === settingsEl) closeSettings();
+});
+
+settingsLocate.addEventListener("click", () => {
+  const api = window.pywebview && window.pywebview.api;
+  if (api && api.open_save_folder) api.open_save_folder();
+});
+
+settingsExport.addEventListener("click", async () => {
+  const api = window.pywebview && window.pywebview.api;
+  if (!api || !api.export_note) return;
+  await saveNow();
+  try {
+    const result = await api.export_note(lang);
+    if (!result || result.cancelled) return;
+    if (!result.ok) showError(result.error === "unreadable" ? "readFailed" : "exportFailed");
+  } catch (error) {
+    showError("exportFailed");
+  }
+});
+
+settingsImport.addEventListener("click", async () => {
+  const api = window.pywebview && window.pywebview.api;
+  if (!api || !api.import_note) return;
+  try {
+    const result = await api.import_note(lang);
+    if (!result || result.cancelled) return;
+    if (!result.ok) {
+      showError(result.error === "invalid" ? "importInvalid" : "importFailed");
+      return;
+    }
+    store = {
+      weeks: result.weeks || {},
+      reminder: typeof result.reminder === "string" ? result.reminder : "",
+      reminderOpen: result.reminderOpen === true,
+    };
+    unreadable = false;
+    clearError();
+    showWeek(viewMonday);
+  } catch (error) {
+    showError("importFailed");
+  }
+});
+
+settingsFont.addEventListener("click", () => {
+  if (fontPicker.hidden) openFontPicker();
+  else closeFontPicker();
+});
+
+settingsFontDefault.addEventListener("click", restoreDefaultFonts);
+
+fontSearch.addEventListener("input", filterFontList);
+fontSearch.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && fontSearch.value) {
+    event.preventDefault();
+    event.stopPropagation();
+    fontSearch.value = "";
+    filterFontList();
+    return;
+  }
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  const visible = fontList.querySelector("button:not([hidden])");
+  if (visible) visible.click();
+});
+
+settingsSize.addEventListener("input", () => {
+  fontSize = clampFontSize(Number(settingsSize.value));
+  applyFontSize();
+  const api = window.pywebview && window.pywebview.api;
+  if (api && api.set_font_size) api.set_font_size(fontSize);
+});
+
+languageButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const next = button.dataset.language === "zh" ? "zh" : "en";
+    if (next === lang) return;
+    setLanguage(next);
+    const api = window.pywebview && window.pywebview.api;
+    if (api && api.set_language) api.set_language(next);
+  });
+});
 
 prevBtn.addEventListener("click", () => {
   closeDeleteConfirm();
@@ -898,6 +1381,11 @@ note.addEventListener("keydown", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !settingsEl.hidden) {
+    if (!fontPicker.hidden) closeFontPicker();
+    else closeSettings();
+    return;
+  }
   if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "z") {
     if (!deleteUndoArmed || !undoStack.length || !confirmEl.hidden) return;
     event.preventDefault();
@@ -929,6 +1417,24 @@ async function init() {
   starting = true;
   useTagFormatting();
   const api = window.pywebview && window.pywebview.api;
+  if (api && api.get_settings) {
+    try {
+      const settings = await api.get_settings();
+      lang = settings && settings.language === "zh" ? "zh" : "en";
+      chosenFonts = { en: "", zh: "" };
+      const stored = settings && settings.fonts;
+      if (stored && typeof stored === "object") {
+        chosenFonts.en = typeof stored.en === "string" ? stored.en.trim() : "";
+        chosenFonts.zh = typeof stored.zh === "string" ? stored.zh.trim() : "";
+      } else if (settings && typeof settings.font === "string") {
+        chosenFonts[lang] = settings.font.trim();
+      }
+      fontSize = clampFontSize(settings && settings.fontSize);
+    } catch (error) {
+      lang = "en";
+    }
+  }
+  applyChrome();
   if (api && api.load_note) {
     try {
       const loaded = await api.load_note();
@@ -939,10 +1445,10 @@ async function init() {
       };
       if (loaded.unreadable) {
         unreadable = true;
-        showError("The saved note could not be read. It was left untouched.");
+        showError("readFailed");
       }
     } catch (error) {
-      showError("The saved note could not be opened.");
+      showError("openFailed");
     }
   }
   showWeek(new Date(), { focusToday: true });

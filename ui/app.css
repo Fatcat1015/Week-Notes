@@ -39,6 +39,8 @@
   --line: #e3dccb;
   --press: #e7e0d0;
   --skipped: #9a948a;
+  --ui-font: "ELEGANT TYPEWRITER", "Courier Prime", "Courier New", sans-serif;
+  --note-size: 12px;
 }
 
 * {
@@ -57,16 +59,186 @@ body {
   overflow: hidden;
   background: var(--paper);
   color: var(--ink);
-  font-family: "Courier Prime", "Courier New", Courier, monospace;
+  font-family: var(--ui-font), "Courier Prime", "Courier New", Courier, monospace;
   font-size: 15px;
   line-height: 1.45;
 }
 
 .top {
   display: grid;
-  grid-template-columns: 36px 1fr 36px;
+  grid-template-columns: 22px 1fr auto 1fr 22px;
   align-items: center;
-  padding: 12px 10px 6px;
+  padding: 8px 8px 6px;
+}
+
+#prev {
+  justify-self: end;
+}
+
+#next {
+  justify-self: start;
+}
+
+.settings-card {
+  width: min(248px, calc(100% - 28px));
+  max-height: calc(100% - 28px);
+  overflow: auto;
+}
+
+.settings-label {
+  display: block;
+  margin: 12px 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.settings-path {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+  word-break: break-all;
+}
+
+.settings-actions,
+.settings-languages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.settings-actions {
+  margin-top: 8px;
+}
+
+.settings-actions button,
+.settings-languages button {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.settings-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-size input {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--ink);
+}
+
+.settings-size span {
+  min-width: 1.6em;
+  font-size: 12px;
+  text-align: right;
+}
+
+.settings-font-row {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.settings-actions button:hover,
+.settings-languages button:hover,
+.settings-languages button[aria-pressed="true"],
+.settings-font:hover,
+.settings-font-default:hover,
+.font-list button:hover,
+.font-list button[aria-pressed="true"] {
+  background: var(--press);
+}
+
+.settings-font,
+.settings-font-default {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.settings-font {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.font-picker[hidden] {
+  display: none;
+}
+
+.font-ask {
+  margin: 8px 0 4px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.font-search {
+  display: block;
+  width: 100%;
+  margin: 0 0 4px;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.font-search:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.font-list {
+  height: 140px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.font-loading {
+  margin: 0;
+  padding: 6px 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.font-list button[hidden] {
+  display: none;
+}
+
+.font-list button {
+  display: block;
+  width: 100%;
+  height: 22px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 22px;
+  padding: 0 8px;
+  cursor: pointer;
 }
 
 .week-label {
@@ -92,6 +264,32 @@ body {
   font: inherit;
   cursor: pointer;
   border-radius: 4px;
+}
+
+.collapse {
+  width: 22px;
+  height: 22px;
+  align-self: start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.collapse svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+.collapse:hover {
+  background: var(--press);
+  color: var(--ink);
 }
 
 .nav {
@@ -127,6 +325,7 @@ body {
   background: var(--press);
 }
 
+.collapse:focus-visible,
 .nav:focus-visible,
 .tool:focus-visible,
 .editor:focus-visible {
@@ -144,6 +343,7 @@ main {
   flex: 1;
   overflow: auto;
   padding: 6px 2px 28px 16px;
+  font-size: var(--note-size);
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
 }
@@ -184,7 +384,7 @@ main::-webkit-scrollbar-button {
 
 .block h2 {
   margin: 0 0 4px;
-  font-size: 12px;
+  font-size: 1em;
   font-weight: 700;
   letter-spacing: 0.01em;
   color: var(--muted);
@@ -195,9 +395,9 @@ main::-webkit-scrollbar-button {
 }
 
 .day.is-today h2::after {
-  content: "Today";
+  content: attr(data-today);
   margin-left: 8px;
-  font-size: 11px;
+  font-size: 0.92em;
   font-weight: 500;
   color: var(--muted);
 }
@@ -207,7 +407,7 @@ main::-webkit-scrollbar-button {
   padding: 2px 0;
   outline: none;
   cursor: text;
-  font-size: 12px;
+  font-size: 1em;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   user-select: text;
@@ -216,12 +416,8 @@ main::-webkit-scrollbar-button {
 .editor:empty::before {
   content: attr(data-placeholder);
   color: var(--faint);
+  font-size: 1em;
   pointer-events: none;
-}
-
-.editor[data-placeholder="Add a task"]:empty::before,
-.editor[data-placeholder="Date and what is due"]:empty::before {
-  font-size: 12px;
 }
 
 .task + .task {
@@ -256,6 +452,40 @@ body.is-task-drag {
   gap: 2px;
 }
 
+.task-grip {
+  position: absolute;
+  left: -16px;
+  top: 0;
+  bottom: 0;
+  width: 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  appearance: none;
+  background: transparent;
+  color: var(--faint);
+  cursor: grab;
+  opacity: 0;
+}
+
+.task:hover .task-grip {
+  opacity: 1;
+}
+
+.task-grip[hidden] {
+  display: none;
+}
+
+.task-grip svg {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  display: block;
+  transform: translate(-50%, -50%);
+}
+
 .task-tail {
   position: relative;
   display: flex;
@@ -285,7 +515,7 @@ body.is-task-drag {
 
 .task-time {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 1em;
   gap: 3px;
 }
 
@@ -300,7 +530,7 @@ body.is-task-drag {
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 12px;
+  font-size: 1em;
   text-align: right;
   appearance: textfield;
 }
@@ -412,7 +642,7 @@ body.is-task-drag {
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: 12px;
+  font-size: 1em;
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
@@ -428,7 +658,7 @@ body.is-task-drag {
   padding: 2px 0 4px;
   outline: none;
   cursor: text;
-  font-size: 12px;
+  font-size: 1em;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   user-select: text;
@@ -437,7 +667,7 @@ body.is-task-drag {
 .reminder-body:empty::before {
   content: attr(data-placeholder);
   color: var(--faint);
-  font-size: 12px;
+  font-size: 1em;
   pointer-events: none;
 }
 
@@ -507,12 +737,12 @@ body.is-task-drag {
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 12px;
+  font-size: 1em;
 }
 
 .why-input::placeholder {
   color: var(--faint);
-  font-size: 12px;
+  font-size: 1em;
 }
 
 .editor b,
